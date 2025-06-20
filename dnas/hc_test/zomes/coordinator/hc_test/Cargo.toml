@@ -1,0 +1,13 @@
+[package]
+name = "hc_test"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "hc_test"
+
+[dependencies]
+hdk = { workspace = true }
+serde = { workspace = true }
+hc_test_integrity = { workspace = true }
