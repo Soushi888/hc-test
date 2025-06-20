@@ -1,18 +1,19 @@
 <script lang="ts">
-import { onMount } from "svelte";
-import { setContext } from "svelte";
-import logo from "./assets/holochainLogo.svg";
-import ClientProvider from "./ClientProvider.svelte";
-import { CLIENT_CONTEXT_KEY, createClientStore } from "./contexts";
+  import { onMount } from "svelte";
+  import { setContext } from "svelte";
+  import logo from "./assets/holochainLogo.svg";
+  import ClientProvider from "./ClientProvider.svelte";
+  import HREATest from "./HREATest.svelte";
+  import { CLIENT_CONTEXT_KEY, createClientStore } from "./contexts";
 
-const clientStore = createClientStore();
-setContext(CLIENT_CONTEXT_KEY, clientStore);
+  const clientStore = createClientStore();
+  setContext(CLIENT_CONTEXT_KEY, clientStore);
 
-let { error, loading } = $derived($clientStore);
+  let { error, loading } = $derived($clientStore);
 
-onMount(() => {
-  clientStore.connect();
-});
+  onMount(() => {
+    clientStore.connect();
+  });
 </script>
 
 <ClientProvider>
@@ -34,36 +35,39 @@ onMount(() => {
         {/if}
       </div>
       <p>
-        Import scaffolded components into <code>src/App.svelte</code> to use
-        your hApp
+        Import scaffolded components into <code>src/App.svelte</code> to use your
+        hApp
       </p>
       <p class="read-the-docs">Click on the Holochain logo to learn more</p>
+
+      <!-- hREA Testing Section -->
+      <HREATest />
     </div>
   </div>
 </ClientProvider>
 
 <style>
-.logo {
-  height: 15em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-  width: auto;
-}
+  .logo {
+    height: 15em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
+    width: auto;
+  }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
+  .logo:hover {
+    filter: drop-shadow(0 0 2em #646cffaa);
+  }
 
-.logo.holochain:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+  .logo.holochain:hover {
+    filter: drop-shadow(0 0 2em #61dafbaa);
+  }
 
-.card {
-  padding: 2em;
-}
+  .card {
+    padding: 2em;
+  }
 
-.read-the-docs {
-  color: #888;
-}
+  .read-the-docs {
+    color: #888;
+  }
 </style>

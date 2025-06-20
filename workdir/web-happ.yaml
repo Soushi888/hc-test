@@ -1,4 +1,4 @@
-manifest_version: '1'
+manifest_version: "1"
 name: hc-test
 ui:
   bundled: ../ui/dist.zip

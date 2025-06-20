@@ -1,16 +1,27 @@
-manifest_version: '1'
+manifest_version: "1"
 name: hc-test
 description: null
 roles:
-- name: hc_test
-  provisioning:
-    strategy: create
-    deferred: false
-  dna:
-    bundled: ../dnas/hc_test/workdir/hc_test.dna
-    modifiers:
-      network_seed: null
-      properties: null
-    installed_hash: null
-    clone_limit: 0
+  - name: hc_test
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: ../dnas/hc_test/workdir/hc_test.dna
+      modifiers:
+        network_seed: null
+        properties: null
+      installed_hash: null
+      clone_limit: 0
+  - name: hrea
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: ./hrea.dna
+      modifiers:
+        network_seed: null
+        properties: null
+      installed_hash: null
+      clone_limit: 0
 allow_deferred_memproofs: false
