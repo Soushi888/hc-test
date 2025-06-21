@@ -18,164 +18,79 @@
     }
   });
 
-  // Test basic hREA schema availability
-  async function testSchema() {
+  // Create a test person
+  async function createTestPerson() {
     if (!apolloClient) {
       testResults.push("❌ Apollo client not available");
       return;
     }
 
-    console.log("🚀 Starting testSchema");
-    console.log("🔧 Apollo client:", apolloClient);
-    console.log("🔧 Apollo client link:", apolloClient.link);
-    console.log(
-      "🔧 Apollo client link constructor:",
-      apolloClient.link?.constructor?.name
-    );
-
     isLoading = true;
+    testResults.push("🔧 Creating test person...");
+
     try {
-      // Test detailed introspection query
-      console.log("🔧 About to execute introspection query...");
-      const introspectionQuery = gql`
-        query {
-          __schema {
-            types {
+      const personData = {
+        name: `Test Person ${Date.now()}`,
+        note: "Test person created via hREA GraphQL",
+      };
+
+      const createPersonMutation = gql`
+        mutation CreatePerson($person: AgentCreateParams!) {
+          createPerson(person: $person) {
+            agent {
+              id
               name
-              kind
-            }
-            mutationType {
-              fields {
-                name
-                args {
-                  name
-                  type {
-                    name
-                    kind
-                  }
-                }
-              }
-            }
-            queryType {
-              fields {
-                name
-                type {
-                  name
-                }
-              }
+              note
             }
           }
         }
       `;
 
-      console.log("🔧 Executing introspection query with Apollo client...");
-      const result = await apolloClient.query({ query: introspectionQuery });
-      console.log("✅ Introspection query result:", result);
+      console.log("🔧 Creating person with data:", personData);
 
-      const types = result.data.__schema.types.map((t: any) => t.name);
-      console.log("🔧 All available types:", types);
+      const personResult = await apolloClient.mutate({
+        mutation: createPersonMutation,
+        variables: { person: personData },
+      });
 
-      // Check for hREA specific types
-      const hreaTypes = types.filter((type: string) =>
-        [
-          "Agent",
-          "Person",
-          "Organization",
-          "Resource",
-          "EconomicEvent",
-          "EconomicResource",
-          "Process",
-        ].includes(type)
-      );
+      console.log("✅ createPerson result:", personResult.data);
 
-      if (hreaTypes.length > 0) {
-        testResults.push(`✅ hREA types found: ${hreaTypes.join(", ")}`);
+      if (personResult.data?.createPerson?.agent) {
+        testResults.push(
+          `✅ Person created successfully: ${personResult.data.createPerson.agent.name} (ID: ${personResult.data.createPerson.agent.id})`
+        );
       } else {
-        testResults.push("❌ No hREA types found in schema");
-      }
-
-      // Show available mutations
-      const mutations = result.data.__schema.mutationType?.fields || [];
-      console.log(
-        "🔧 All mutations:",
-        mutations.map((m: any) => m.name)
-      );
-
-      const agentMutations = mutations.filter(
-        (m: any) =>
-          m.name.toLowerCase().includes("agent") ||
-          m.name.toLowerCase().includes("person") ||
-          m.name.toLowerCase().includes("organization")
-      );
-
-      if (agentMutations.length > 0) {
         testResults.push(
-          `🔧 Agent-related mutations: ${agentMutations.map((m: any) => m.name).join(", ")}`
+          "⚠️ Person creation completed but returned unexpected data structure"
         );
-
-        // Show details of ALL agent mutations
-        agentMutations.forEach((mutation: any) => {
-          console.log(`🔧 Mutation ${mutation.name} details:`, mutation);
-          const argsDetail = mutation.args
-            .map((a: any) => {
-              const typeName =
-                a.type.name ||
-                (a.type.ofType && a.type.ofType.name) ||
-                a.type.kind;
-              return `${a.name}: ${typeName}`;
-            })
-            .join(", ");
-          testResults.push(`📝 ${mutation.name} args: ${argsDetail}`);
-        });
-      } else {
-        testResults.push("❌ No agent-related mutations found");
-        testResults.push(
-          `🔧 All available mutations: ${mutations.map((m: any) => m.name).join(", ")}`
-        );
+        console.log("Unexpected person result:", personResult.data);
       }
-
-      // Show available queries
-      const queries = result.data.__schema.queryType?.fields || [];
-      const agentQueries = queries.filter(
-        (q: any) =>
-          q.name.toLowerCase().includes("agent") ||
-          q.name.toLowerCase().includes("person") ||
-          q.name.toLowerCase().includes("organization")
-      );
-
-      if (agentQueries.length > 0) {
-        testResults.push(
-          `🔍 Agent-related queries: ${agentQueries.map((q: any) => q.name).join(", ")}`
-        );
-      }
-
+    } catch (error) {
       testResults.push(
-        `📊 Total types: ${types.length}, mutations: ${mutations.length}, queries: ${queries.length}`
+        `❌ Person creation failed: ${(error as Error).message}`
       );
-    } catch (e) {
-      testResults.push(`❌ Schema test failed: ${e}`);
+      console.error("Person creation error:", error);
     } finally {
       isLoading = false;
     }
   }
 
-  // Test creating an Agent
-  async function testCreateAgent() {
+  // Create a test organization
+  async function createTestOrganization() {
     if (!apolloClient) {
       testResults.push("❌ Apollo client not available");
       return;
     }
 
-    console.log("🚀 Starting testCreateAgent");
     isLoading = true;
-    testResults.push("🔧 Starting agent creation test...");
-
-    let orgSuccess = false;
-    let personSuccess = false;
+    testResults.push("🔧 Creating test organization...");
 
     try {
-      // Test createOrganization
-      testResults.push("🔧 Testing createOrganization...");
+      const orgData = {
+        name: `Test Organization ${Date.now()}`,
+        note: "Test organization created via hREA GraphQL",
+      };
+
       const createOrgMutation = gql`
         mutation CreateOrganization($organization: OrganizationCreateParams!) {
           createOrganization(organization: $organization) {
@@ -188,152 +103,30 @@
         }
       `;
 
-      const orgVariables = {
-        organization: {
-          name: `Test Org ${Date.now()}`,
-          note: "Test organization created via hREA GraphQL",
-        },
-      };
+      console.log("🔧 Creating organization with data:", orgData);
 
-      try {
-        const orgResult = await apolloClient.mutate({
-          mutation: createOrgMutation,
-          variables: orgVariables,
-        });
+      const orgResult = await apolloClient.mutate({
+        mutation: createOrgMutation,
+        variables: { organization: orgData },
+      });
 
-        console.log("✅ createOrganization result:", orgResult.data);
+      console.log("✅ createOrganization result:", orgResult.data);
 
-        if (orgResult.data?.createOrganization?.agent) {
-          orgSuccess = true;
-          testResults.push(
-            `✅ Organization created successfully: ${orgResult.data.createOrganization.agent.name} (ID: ${orgResult.data.createOrganization.agent.id})`
-          );
-        } else {
-          testResults.push(
-            "⚠️ createOrganization completed but returned unexpected data structure"
-          );
-          console.log("Unexpected org result:", orgResult.data);
-        }
-      } catch (orgError) {
+      if (orgResult.data?.createOrganization?.agent) {
         testResults.push(
-          `❌ createOrganization failed: ${(orgError as Error).message}`
-        );
-        console.error("createOrganization error:", orgError);
-      }
-
-      // Test createPerson
-      testResults.push("🔧 Testing createPerson...");
-
-      // First get the schema structure
-      const schemaQuery = gql`
-        query GetPersonCreateParams {
-          __type(name: "PersonCreateParams") {
-            name
-            inputFields {
-              name
-              type {
-                name
-                kind
-                ofType {
-                  name
-                  kind
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      try {
-        const schemaResult = await apolloClient.query({ query: schemaQuery });
-        const personParams = schemaResult.data?.__type;
-
-        if (personParams) {
-          // Build person object based on available fields
-          const personData: any = {
-            name: `Test Person ${Date.now()}`,
-          };
-
-          // Add optional fields
-          personParams.inputFields.forEach((field: any) => {
-            if (field.name === "note") {
-              personData.note = "Test person created via hREA GraphQL";
-            }
-          });
-
-          const createPersonMutation = gql`
-            mutation CreatePerson($person: PersonCreateParams!) {
-              createPerson(person: $person) {
-                agent {
-                  id
-                  name
-                  note
-                }
-              }
-            }
-          `;
-
-          const personVariables = { person: personData };
-
-          try {
-            const personResult = await apolloClient.mutate({
-              mutation: createPersonMutation,
-              variables: personVariables,
-            });
-
-            console.log("✅ createPerson result:", personResult.data);
-
-            if (personResult.data?.createPerson?.agent) {
-              personSuccess = true;
-              testResults.push(
-                `✅ Person created successfully: ${personResult.data.createPerson.agent.name} (ID: ${personResult.data.createPerson.agent.id})`
-              );
-            } else {
-              testResults.push(
-                "⚠️ createPerson completed but returned unexpected data structure"
-              );
-              console.log("Unexpected person result:", personResult.data);
-            }
-          } catch (personError) {
-            testResults.push(
-              `❌ createPerson failed: ${(personError as Error).message}`
-            );
-            console.error("createPerson error:", personError);
-          }
-        } else {
-          testResults.push(
-            "⚠️ PersonCreateParams not found in schema - skipping person creation"
-          );
-        }
-      } catch (schemaError) {
-        testResults.push(
-          `⚠️ Could not get PersonCreateParams schema: ${(schemaError as Error).message}`
-        );
-        console.log("Schema query error:", schemaError);
-      }
-
-      // Summary
-      testResults.push("\n📋 Agent Creation Test Summary:");
-      testResults.push(
-        `   Organizations: ${orgSuccess ? "✅ Working" : "❌ Failed"}`
-      );
-      testResults.push(
-        `   Persons: ${personSuccess ? "✅ Working" : "❌ Failed"}`
-      );
-
-      if (orgSuccess || personSuccess) {
-        testResults.push(
-          "🎉 Agent creation is working! Check console for detailed results."
+          `✅ Organization created successfully: ${orgResult.data.createOrganization.agent.name} (ID: ${orgResult.data.createOrganization.agent.id})`
         );
       } else {
-        testResults.push("⚠️ No agent types could be created successfully.");
+        testResults.push(
+          "⚠️ Organization creation completed but returned unexpected data structure"
+        );
+        console.log("Unexpected org result:", orgResult.data);
       }
-    } catch (e) {
-      const errorMessage = (e as Error).message || String(e);
+    } catch (error) {
       testResults.push(
-        `❌ Agent creation test encountered an error: ${errorMessage}`
+        `❌ Organization creation failed: ${(error as Error).message}`
       );
-      console.error("Agent creation test error:", e);
+      console.error("Organization creation error:", error);
     } finally {
       isLoading = false;
     }
@@ -481,7 +274,9 @@
         testResults.push(
           "💡 This is normal if no agents have been created yet"
         );
-        testResults.push("🎯 Try 'Create Test Agent' first, then query again");
+        testResults.push(
+          "🎯 Try 'Create Test Person' or 'Create Test Organization' first, then query again"
+        );
       }
     } catch (e) {
       const errorMessage = (e as Error).message || String(e);
@@ -489,255 +284,6 @@
       testResults.push("ℹ️ This often happens when the database is empty");
       testResults.push("💡 Try creating an agent first, then querying");
       console.error("Query error:", e);
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  // Test detailed schema introspection for mutations
-  async function testMutationSchema() {
-    if (!apolloClient) {
-      testResults.push("❌ Apollo client not available");
-      return;
-    }
-
-    isLoading = true;
-    testResults.push("🔧 Starting detailed mutation schema test...");
-
-    try {
-      const detailedIntrospectionQuery = gql`
-        query DetailedIntrospection {
-          __schema {
-            mutationType {
-              fields {
-                name
-                description
-                args {
-                  name
-                  description
-                  type {
-                    name
-                    kind
-                    ofType {
-                      name
-                      kind
-                      inputFields {
-                        name
-                        type {
-                          name
-                          kind
-                        }
-                      }
-                    }
-                  }
-                }
-                type {
-                  name
-                  kind
-                  fields {
-                    name
-                    type {
-                      name
-                      kind
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      const result = await apolloClient.query({
-        query: detailedIntrospectionQuery,
-      });
-      console.log("✅ Detailed introspection result:", result);
-
-      const mutations = result.data.__schema.mutationType?.fields || [];
-      testResults.push(`📋 Found ${mutations.length} total mutations`);
-
-      // Focus on agent-related mutations
-      const agentMutations = mutations.filter(
-        (m: any) =>
-          m.name.toLowerCase().includes("agent") ||
-          m.name.toLowerCase().includes("person") ||
-          m.name.toLowerCase().includes("organization")
-      );
-
-      testResults.push(
-        `👥 Found ${agentMutations.length} agent-related mutations:`
-      );
-
-      agentMutations.forEach((mutation: any) => {
-        testResults.push(`\n📝 ${mutation.name}:`);
-        if (mutation.description) {
-          testResults.push(`   Description: ${mutation.description}`);
-        }
-
-        testResults.push(`   Arguments:`);
-        mutation.args.forEach((arg: any) => {
-          const typeName =
-            arg.type.name ||
-            (arg.type.ofType && arg.type.ofType.name) ||
-            arg.type.kind;
-          testResults.push(`     - ${arg.name}: ${typeName}`);
-
-          // Show input field details for complex types
-          if (arg.type.ofType && arg.type.ofType.inputFields) {
-            testResults.push(`       Input fields:`);
-            arg.type.ofType.inputFields.forEach((field: any) => {
-              const fieldTypeName = field.type.name || field.type.kind;
-              testResults.push(`         * ${field.name}: ${fieldTypeName}`);
-            });
-          }
-        });
-
-        testResults.push(
-          `   Returns: ${mutation.type.name || mutation.type.kind}`
-        );
-        if (mutation.type.fields) {
-          testResults.push(`   Return fields:`);
-          mutation.type.fields.forEach((field: any) => {
-            const fieldTypeName = field.type.name || field.type.kind;
-            testResults.push(`     - ${field.name}: ${fieldTypeName}`);
-          });
-        }
-      });
-
-      // If no agent mutations found, show all mutations
-      if (agentMutations.length === 0) {
-        testResults.push("\n📝 All available mutations:");
-        mutations.forEach((mutation: any) => {
-          testResults.push(`   - ${mutation.name}`);
-        });
-      }
-    } catch (e) {
-      const errorMessage = (e as Error).message || String(e);
-      testResults.push(
-        `❌ Detailed schema introspection failed: ${errorMessage}`
-      );
-      console.error("Schema introspection error:", e);
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  // Test current agent and basic connectivity
-  async function testCurrentAgent() {
-    if (!apolloClient) {
-      testResults.push("❌ Apollo client not available");
-      return;
-    }
-
-    isLoading = true;
-    testResults.push("🔧 Testing current agent and connectivity...");
-
-    try {
-      // Try to get current agent info
-      testResults.push("🔧 Attempting to get current agent info...");
-      const currentAgentQuery = gql`
-        query GetCurrentAgent {
-          myAgent {
-            id
-            name
-            note
-          }
-        }
-      `;
-
-      try {
-        const result = await apolloClient.query({
-          query: currentAgentQuery,
-          fetchPolicy: "network-only",
-        });
-
-        console.log("✅ Current agent result:", result);
-        testResults.push(
-          `🔧 Current agent result: ${JSON.stringify(result.data)}`
-        );
-
-        if (result.data?.myAgent) {
-          testResults.push(
-            `✅ Current agent found: ${result.data.myAgent.name || "Unnamed"} (${result.data.myAgent.id})`
-          );
-        } else {
-          testResults.push(
-            "ℹ️ No current agent found - might need registration"
-          );
-        }
-      } catch (agentError) {
-        testResults.push(
-          `ℹ️ Current agent query failed: ${(agentError as Error).message}`
-        );
-        console.error("Current agent error:", agentError);
-      }
-
-      // Try alternative current agent queries
-      testResults.push("🔧 Trying alternative agent queries...");
-
-      const alternativeQueries = [
-        gql`
-          query {
-            me {
-              id
-              name
-            }
-          }
-        `,
-        gql`
-          query {
-            viewer {
-              id
-              name
-            }
-          }
-        `,
-        gql`
-          query {
-            currentAgent {
-              id
-              name
-            }
-          }
-        `,
-      ];
-
-      for (let i = 0; i < alternativeQueries.length; i++) {
-        try {
-          const altResult = await apolloClient.query({
-            query: alternativeQueries[i],
-            fetchPolicy: "network-only",
-          });
-          testResults.push(
-            `✅ Alternative query ${i + 1} worked: ${JSON.stringify(altResult.data)}`
-          );
-        } catch (altError) {
-          testResults.push(
-            `❌ Alternative query ${i + 1} failed: ${(altError as Error).message}`
-          );
-        }
-      }
-
-      // Test basic schema connectivity by trying to get __typename
-      testResults.push("🔧 Testing basic GraphQL connectivity...");
-      const basicQuery = gql`
-        query {
-          __typename
-        }
-      `;
-
-      const basicResult = await apolloClient.query({
-        query: basicQuery,
-        fetchPolicy: "network-only",
-      });
-
-      testResults.push(
-        `✅ Basic connectivity works: ${JSON.stringify(basicResult.data)}`
-      );
-    } catch (e) {
-      const errorMessage = (e as Error).message || String(e);
-      testResults.push(`❌ Current agent test failed: ${errorMessage}`);
-      console.error("Current agent test error:", e);
     } finally {
       isLoading = false;
     }
@@ -760,24 +306,16 @@
   {/if}
 
   <div class="controls">
-    <button onclick={testSchema} disabled={isLoading}>
-      {isLoading ? "Testing..." : "Test Schema"}
+    <button onclick={createTestPerson} disabled={isLoading}>
+      {isLoading ? "Creating..." : "Create Test Person"}
     </button>
 
-    <button onclick={testCreateAgent} disabled={isLoading}>
-      {isLoading ? "Creating..." : "Create Test Agent"}
+    <button onclick={createTestOrganization} disabled={isLoading}>
+      {isLoading ? "Creating..." : "Create Test Organization"}
     </button>
 
     <button onclick={testQueryAgents} disabled={isLoading}>
       {isLoading ? "Querying..." : "Query Agents"}
-    </button>
-
-    <button onclick={testMutationSchema} disabled={isLoading}>
-      {isLoading ? "Testing..." : "Test Mutation Schema"}
-    </button>
-
-    <button onclick={testCurrentAgent} disabled={isLoading}>
-      {isLoading ? "Testing..." : "Test Current Agent"}
     </button>
 
     <button onclick={clearResults}>Clear Results</button>

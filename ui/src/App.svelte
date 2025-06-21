@@ -34,11 +34,6 @@
           <p>Client is connected.</p>
         {/if}
       </div>
-      <p>
-        Import scaffolded components into <code>src/App.svelte</code> to use your
-        hApp
-      </p>
-      <p class="read-the-docs">Click on the Holochain logo to learn more</p>
 
       <!-- hREA Testing Section -->
       <HREATest />
@@ -65,9 +60,5 @@
 
   .card {
     padding: 2em;
-  }
-
-  .read-the-docs {
-    color: #888;
   }
 </style>
