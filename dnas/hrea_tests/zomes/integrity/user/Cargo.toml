@@ -1,11 +1,11 @@
 [package]
-name = "hc_test_integrity"
+name = "user_integrity"
 version = "0.0.1"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "hc_test_integrity"
+name = "user_integrity"
 
 [dependencies]
 hdi = { workspace = true }

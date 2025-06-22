@@ -47,7 +47,57 @@ For detailed scaffolding instructions, see the official tutorial:
 
 Now that you have a scaffolded Holochain app, you can integrate hREA:
 
-### Step 1: Add hREA Configuration
+### Step 1: Ensure Basic DNA Structure
+
+**⚠️ Important**: Before integrating hREA, your hApp must have at least one basic DNA with a zome to compile properly. If you followed the scaffolding process and chose to create an initial DNA, you should already have this. If not, you'll need to scaffold a basic DNA first.
+
+**Verify your DNA structure:**
+```bash
+# Check that you have a basic DNA structure
+ls dnas/
+# Should show at least one DNA directory (e.g., your_main_dna/)
+
+# Check that your DNA has at least one zome
+ls dnas/your_main_dna/zomes/
+# Should show integrity/ and coordinator/ directories with zomes
+```
+
+**If you don't have a basic DNA structure**, scaffold one:
+```bash
+# Enter the Nix development environment
+nix develop
+
+# Scaffold a basic DNA (if you don't already have one)
+hc scaffold dna
+
+# Scaffold basic zomes for the DNA
+hc scaffold zome
+```
+
+**Your basic hApp configuration should look like this** in `workdir/happ.yaml`:
+```yaml
+manifest_version: "1"
+name: your_app_name
+roles:
+  - name: your_main_dna    # Your basic DNA role
+    dna:
+      bundled: ../dnas/your_main_dna/workdir/your_main_dna.dna
+    # ... other DNA configuration
+```
+
+**Build and test your basic hApp first:**
+```bash
+# Build the basic hApp to ensure it compiles
+npm run build:happ
+
+# If successful, you'll see your DNA file created
+ls dnas/your_main_dna/workdir/
+# Should show your_main_dna.dna
+```
+
+Once you have a working basic hApp structure, you can proceed with hREA integration.
+
+### Step 2: Add hREA Configuration
 
 Navigate to your scaffolded app directory and add the hREA role to your hApp configuration.
 
@@ -79,13 +129,15 @@ roles:
 # Add hREA role here too if needed for web deployment
 ```
 
-### Step 2: Download hREA DNA
+### Step 3: Download hREA DNA
 
 **Edit your `package.json`** to add hREA v0.3.1 DNA download:
 ```json
 {
   "scripts": {
-    "postinstall": "curl -L https://github.com/h-REA/hREA/releases/download/v0.3.1/hrea.dna -o workdir/hrea.dna"
+    "postinstall": "bun run download-hrea",
+    // other scripts...
+    "download-hrea": "[ ! -f \"workdir/hrea.dna\" ] && curl -L --output workdir/hrea.dna https://github.com/h-REA/hREA/releases/download/happ-0.3.1-beta/hrea.dna; exit 0"
   }
 }
 ```
@@ -95,7 +147,7 @@ Then run:
 npm install  # or your chosen package manager
 ```
 
-### Step 3: Add hREA Dependencies
+### Step 4: Add hREA Dependencies
 
 **Add to your UI `package.json`** (compatible with hREA v0.3.1):
 ```json
@@ -111,10 +163,10 @@ npm install  # or your chosen package manager
 ```
 
 **Key dependencies explained (for hREA v0.3.1):**
-- `@apollo/client` - GraphQL client for React/Svelte integration
+- `@apollo/client` - GraphQL client for React/Svelte integration (includes SchemaLink)
 - `@holochain/client` - Official Holochain client for WebSocket connections
 - `@msgpack/msgpack` - MessagePack serialization (required by Holochain client)
-- `@valueflows/vf-graphql-holochain` - hREA v0.3.1 GraphQL schema and utilities (version 0.0.3-alpha.10)
+- `@valueflows/vf-graphql-holochain` - hREA v0.3.1 GraphQL schema and utilities (version 0.0.3-alpha.10) - provides `createHolochainSchema`
 - `graphql` - Core GraphQL library
 
 Install the dependencies:
@@ -123,11 +175,11 @@ cd ui
 npm install  # or your chosen package manager
 ```
 
-### Step 4: Modify Integration Files
+### Step 5: Modify Integration Files
 
 The scaffolded Holochain application already includes basic files that we need to modify for hREA integration. We'll update these files to use modern Svelte 5 runes for optimal performance and developer experience.
 
-#### 4.1. Replace `ui/src/contexts.ts` with `ui/src/contexts.svelte.ts`
+#### 5.1. Replace `ui/src/contexts.ts` with `ui/src/contexts.svelte.ts`
 
 First, delete the existing `ui/src/contexts.ts` file and create `ui/src/contexts.svelte.ts` with Svelte 5 rune-based state management:
 
@@ -143,163 +195,213 @@ This file manages the connection between Svelte, Holochain, and hREA using Svelt
 **Content for `ui/src/contexts.svelte.ts`:**
 
 ```typescript
-import { ApolloClient, InMemoryCache, from } from "@apollo/client/core";
-import { AppWebsocket, InstalledCell, type AppInfo } from "@holochain/client";
-import { HolochainLink } from "@valueflows/vf-graphql-holochain";
+// hREA Integration Context - Svelte 5 Runes
+// This file manages the connection between Svelte, Holochain, and hREA using modern runes
 
-// Holochain client state management
+import { ApolloClient, InMemoryCache } from "@apollo/client/core";
+import { SchemaLink } from "@apollo/client/link/schema";
+import type { AppClient, HolochainError } from "@holochain/client";
+import { AppWebsocket } from "@holochain/client";
+import { createHolochainSchema } from "@valueflows/vf-graphql-holochain";
+import { getContext, setContext } from "svelte";
+
+// Context keys for Svelte contexts
+export const CLIENT_CONTEXT_KEY = Symbol("holochain-client");
+export const APOLLO_CLIENT_CONTEXT_KEY = Symbol("apollo-client");
+
+// Holochain client state class using runes
 export class HolochainClientState {
-  client = $state<AppWebsocket | null>(null);
-  loading = $state(true);
-  error = $state<string | null>(null);
-  appInfo = $state<AppInfo | null>(null);
+  client = $state<AppClient | undefined>(undefined);
+  error = $state<HolochainError | undefined>(undefined);
+  loading = $state(false);
 
   async connect() {
+    this.loading = true;
+    this.error = undefined;
+
     try {
-      this.loading = true;
-      this.error = null;
-
-      const client = await AppWebsocket.connect({
-        url: new URL("ws://localhost", `${window.location.protocol}//${window.location.host}`),
-        wsUrl: "ws://localhost:8888",
-      });
-
-      const appInfo = await client.appInfo();
-
-      this.client = client;
-      this.appInfo = appInfo;
-      this.loading = false;
-    } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to connect to Holochain";
+      this.client = await AppWebsocket.connect();
+      console.log("✅ Connected to Holochain");
+    } catch (e) {
+      console.error("❌ Failed to connect to Holochain:", e);
+      this.error = e as HolochainError;
+    } finally {
       this.loading = false;
     }
   }
+
+  getClient() {
+    if (!this.client) {
+      throw new Error("Holochain client not initialized");
+    }
+    return this.client;
+  }
 }
 
-// hREA client state management
+// hREA GraphQL client state class using runes
 export class HREAClientState {
-  apolloClient = $state<ApolloClient<any> | null>(null);
-  loading = $state(true);
-  error = $state<string | null>(null);
+  client = $state<ApolloClient<any> | undefined>(undefined);
+  error = $state<string | undefined>(undefined);
+  loading = $state(false);
 
-  constructor(private holochainState: HolochainClientState) {
-    $effect(() => {
-      if (this.holochainState.client && this.holochainState.appInfo) {
-        this.initializeHREA();
-      }
-    });
-  }
+  async initialize(holochainClient: AppClient) {
+    this.loading = true;
+    this.error = undefined;
 
-  private async initializeHREA() {
     try {
-      this.loading = true;
-      this.error = null;
+      console.log("🔧 Initializing hREA with GraphQL schema...");
 
-      const hreaCell = this.holochainState.appInfo!.installed_cells.find(
-        (cell: InstalledCell) => cell.role_name === "hrea"
-      );
-
-      if (!hreaCell) {
-        throw new Error("hREA cell not found in app");
-      }
-
-      const authToken = Buffer.from(
-        `${hreaCell.cell_id[0]}:${hreaCell.cell_id[1]}`
-      ).toString("base64");
-
-      const link = new HolochainLink({
-        uri: "ws://localhost:8888",
-        wsClient: this.holochainState.client!,
-        authToken,
+      // Create GraphQL schema from hREA DNA
+      const schema = createHolochainSchema({
+        appWebSocket: holochainClient,
+        roleName: "hrea", // This matches the role name in happ.yaml
       });
 
-      this.apolloClient = new ApolloClient({
-        link: from([link]),
+      // Create Apollo Client with hREA schema
+      this.client = new ApolloClient({
         cache: new InMemoryCache(),
+        link: new SchemaLink({ schema }),
+        defaultOptions: {
+          query: {
+            fetchPolicy: "cache-first",
+          },
+          mutate: {
+            fetchPolicy: "no-cache",
+          },
+        },
       });
 
-      this.loading = false;
-    } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to initialize hREA";
+      console.log("✅ hREA initialized successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to initialize hREA";
+      console.error("❌ hREA initialization failed:", error);
+      this.error = errorMessage;
+      throw error;
+    } finally {
       this.loading = false;
     }
   }
+
+  getClient() {
+    if (!this.client) {
+      throw new Error("hREA client not initialized");
+    }
+    return this.client;
+  }
 }
 
-// Global state instances
-export const holochainClientState = new HolochainClientState();
-export const hreaClientState = new HREAClientState(holochainClientState);
-
-// Helper functions for getting states
-export function getHolochainClient() {
-  return holochainClientState;
+// Factory functions for creating state instances
+export function createHolochainClientState() {
+  return new HolochainClientState();
 }
 
-export function getHREAClient() {
-  return hreaClientState;
+export function createHREAClientState() {
+  return new HREAClientState();
+}
+
+// Context getters
+export function getHolochainClient(): HolochainClientState {
+  const clientState = getContext<HolochainClientState>(CLIENT_CONTEXT_KEY);
+  if (!clientState) {
+    throw new Error("Holochain client state not found in context");
+  }
+  return clientState;
+}
+
+export function getHREAClient(): HREAClientState {
+  const hreaState = getContext<HREAClientState>(APOLLO_CLIENT_CONTEXT_KEY);
+  if (!hreaState) {
+    throw new Error("hREA client state not found in context");
+  }
+  return hreaState;
+}
+
+// Convenience function to get the Apollo client directly
+export function getApolloClient(): ApolloClient<any> {
+  const hreaState = getHREAClient();
+  return hreaState.getClient();
 }
 ```
 
-#### 4.2. Create or Replace `ui/src/ClientProvider.svelte`
+#### 5.2. Create or Replace `ui/src/ClientProvider.svelte`
 
 If this file doesn't exist in your scaffolded app, create it. If it exists, replace its content with the following. This component manages connection states and provides clients to child components:
 
 ```svelte
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, setContext } from "svelte";
   import {
-    holochainClientState,
-    hreaClientState,
+    CLIENT_CONTEXT_KEY,
+    APOLLO_CLIENT_CONTEXT_KEY,
+    createHolochainClientState,
+    createHREAClientState,
   } from "./contexts.svelte";
 
   interface Props {
-    children?: any;
+    children?: import("svelte").Snippet;
   }
 
   let { children }: Props = $props();
 
-  const holochainState = holochainClientState;
-  const hreaState = hreaClientState;
+  // Create state instances using runes
+  const holochainState = createHolochainClientState();
+  const hreaState = createHREAClientState();
 
+  // Make state available to child components via context
+  setContext(CLIENT_CONTEXT_KEY, holochainState);
+  setContext(APOLLO_CLIENT_CONTEXT_KEY, hreaState);
+
+  // Connect to Holochain when component mounts
   onMount(() => {
     holochainState.connect();
   });
+
+  // Initialize hREA when Holochain client is ready
+  $effect(() => {
+    if (
+      holochainState.client &&
+      !hreaState.client &&
+      !hreaState.error &&
+      !hreaState.loading
+    ) {
+      hreaState.initialize(holochainState.client);
+    }
+  });
 </script>
 
+<!-- Connection Status and Content -->
 {#if holochainState.loading}
   <div class="status connecting">
     <div class="spinner"></div>
-    <span>Connecting to Holochain...</span>
+    <p>Connecting to Holochain...</p>
   </div>
 {:else if holochainState.error}
   <div class="status error">
-    <strong>Holochain Connection Error:</strong>
-    <p>{holochainState.error}</p>
-    <button onclick={() => holochainState.connect()}>
-      Retry Connection
-    </button>
+    <h3>❌ Connection Failed</h3>
+    <p>Unable to connect to Holochain: {holochainState.error.message}</p>
+    <p class="help">
+      Make sure Holochain is running and try refreshing the page.
+    </p>
   </div>
-{:else if hreaState.loading}
+{:else if holochainState.client && hreaState.error}
+  <div class="status error">
+    <h3>⚠️ hREA Initialization Failed</h3>
+    <p>Holochain connected, but hREA setup failed: {hreaState.error}</p>
+    <p class="help">Check that the hREA DNA is properly configured.</p>
+  </div>
+{:else if holochainState.client && hreaState.loading}
   <div class="status connecting">
     <div class="spinner"></div>
-    <span>Initializing hREA...</span>
+    <p>Initializing hREA...</p>
   </div>
-{:else if hreaState.error}
-  <div class="status error">
-    <strong>hREA Initialization Error:</strong>
-    <p>{hreaState.error}</p>
-    <button onclick={() => holochainState.connect()}>
-      Retry Connection
-    </button>
-  </div>
-{:else if holochainState.client && hreaState.apolloClient}
-  <div class="app-container">
-    {@render children?.()}
-  </div>
+{:else if holochainState.client && hreaState.client}
+  <!-- Everything is ready - show the app -->
+  {@render children?.()}
 {:else}
-  <div class="status error">
-    <strong>Unknown State</strong>
-    <p>Something went wrong during initialization.</p>
+  <div class="status connecting">
+    <div class="spinner"></div>
+    <p>Setting up connections...</p>
   </div>
 {/if}
 
@@ -310,61 +412,65 @@ If this file doesn't exist in your scaffolded app, create it. If it exists, repl
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    padding: 2rem;
+    padding: 40px 20px;
     text-align: center;
-    border-radius: 8px;
-    margin: 1rem;
   }
 
   .connecting {
-    background-color: #f0f9ff;
-    border: 2px solid #0ea5e9;
-    color: #0c4a6e;
+    color: #ccc;
   }
 
   .error {
-    background-color: #fef2f2;
-    border: 2px solid #ef4444;
-    color: #991b1b;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 8px;
+    margin: 20px;
+  }
+
+  .error h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+  }
+
+  .error p {
+    margin: 8px 0;
+    max-width: 500px;
+  }
+
+  .help {
+    font-size: 0.9em;
+    opacity: 0.8;
+    font-style: italic;
   }
 
   .spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid #e5e7eb;
-    border-top: 3px solid #0ea5e9;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid #007acc;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
-  button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background-color: #0ea5e9;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background-color: #0284c7;
-  }
-
-  .app-container {
-    min-height: 100vh;
-    padding: 1rem;
+  p {
+    margin: 0;
+    font-size: 16px;
   }
 </style>
 ```
 
-#### 4.3. Create `ui/src/HREATest.svelte`
+#### 5.3. Create `ui/src/HREATest.svelte`
 
 This is a new component that demonstrates basic hREA operations. Create this file in your scaffolded app:
 
@@ -373,22 +479,32 @@ This is a new component that demonstrates basic hREA operations. Create this fil
   import { getHREAClient } from "./contexts.svelte";
   import { gql } from "@apollo/client/core";
 
-  const hreaClient = getHREAClient();
-  let apolloClient = $derived(hreaClient.apolloClient);
+  let results: string[] = $state([]);
+  let isLoading = $state(false);
 
-  let results = $state<string[]>([]);
-  let isWorking = $state(false);
+  // Get hREA client state to check connection status
+  const hreaState = getHREAClient();
 
+  // Reactive derived value for Apollo client
+  let apolloClient = $derived(hreaState.client);
+
+  // Add connection status to results when client becomes available
   $effect(() => {
     if (apolloClient && results.length === 0) {
       results.push("✅ Connected to hREA successfully");
     }
   });
 
+  // Example 1: Create a Person Agent
   async function createPerson() {
-    if (!apolloClient) return;
-    
-    isWorking = true;
+    if (!apolloClient) {
+      results.push("❌ hREA not connected");
+      return;
+    }
+
+    isLoading = true;
+    results.push("🔧 Creating a person agent...");
+
     try {
       const result = await apolloClient.mutate({
         mutation: gql`
@@ -405,28 +521,36 @@ This is a new component that demonstrates basic hREA operations. Create this fil
         variables: {
           person: {
             name: `Person ${Date.now()}`,
-            note: "Created from hREA integration example"
-          }
-        }
+            note: "Created via hREA basic example",
+          },
+        },
       });
 
       const agent = result.data.createPerson.agent;
-      results.push(`👤 Created Person: ${agent.name} (ID: ${agent.id})`);
+      results.push(`✅ Person created: ${agent.name} (ID: ${agent.id})`);
     } catch (error) {
-      results.push(`❌ Error creating person: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.push(`❌ Failed to create person: ${(error as Error).message}`);
     } finally {
-      isWorking = false;
+      isLoading = false;
     }
   }
 
+  // Example 2: Create an Organization Agent
   async function createOrganization() {
-    if (!apolloClient) return;
-    
-    isWorking = true;
+    if (!apolloClient) {
+      results.push("❌ hREA not connected");
+      return;
+    }
+
+    isLoading = true;
+    results.push("🔧 Creating an organization agent...");
+
     try {
       const result = await apolloClient.mutate({
         mutation: gql`
-          mutation CreateOrganization($organization: OrganizationCreateParams!) {
+          mutation CreateOrganization(
+            $organization: OrganizationCreateParams!
+          ) {
             createOrganization(organization: $organization) {
               agent {
                 id
@@ -439,24 +563,81 @@ This is a new component that demonstrates basic hREA operations. Create this fil
         variables: {
           organization: {
             name: `Organization ${Date.now()}`,
-            note: "Created from hREA integration example"
-          }
-        }
+            note: "Created via hREA basic example",
+          },
+        },
       });
 
       const agent = result.data.createOrganization.agent;
-      results.push(`🏢 Created Organization: ${agent.name} (ID: ${agent.id})`);
+      results.push(`✅ Organization created: ${agent.name} (ID: ${agent.id})`);
     } catch (error) {
-      results.push(`❌ Error creating organization: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.push(
+        `❌ Failed to create organization: ${(error as Error).message}`
+      );
     } finally {
-      isWorking = false;
+      isLoading = false;
     }
   }
 
+  // Example 3: Create a Resource Specification
+  async function createResourceSpec() {
+    if (!apolloClient) {
+      results.push("❌ hREA not connected");
+      return;
+    }
+
+    isLoading = true;
+    results.push("🔧 Creating a resource specification...");
+
+    try {
+      const result = await apolloClient.mutate({
+        mutation: gql`
+          mutation CreateResourceSpecification(
+            $resourceSpecification: ResourceSpecificationCreateParams!
+          ) {
+            createResourceSpecification(
+              resourceSpecification: $resourceSpecification
+            ) {
+              resourceSpecification {
+                id
+                name
+                note
+              }
+            }
+          }
+        `,
+        variables: {
+          resourceSpecification: {
+            name: `Resource Spec ${Date.now()}`,
+            note: "A basic resource specification example",
+          },
+        },
+      });
+
+      const spec =
+        result.data.createResourceSpecification.resourceSpecification;
+      results.push(
+        `✅ Resource specification created: ${spec.name} (ID: ${spec.id})`
+      );
+    } catch (error) {
+      results.push(
+        `❌ Failed to create resource specification: ${(error as Error).message}`
+      );
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  // Example 4: Query All Agents
   async function queryAgents() {
-    if (!apolloClient) return;
-    
-    isWorking = true;
+    if (!apolloClient) {
+      results.push("❌ hREA not connected");
+      return;
+    }
+
+    isLoading = true;
+    results.push("🔧 Querying all agents...");
+
     try {
       const result = await apolloClient.query({
         query: gql`
@@ -471,54 +652,24 @@ This is a new component that demonstrates basic hREA operations. Create this fil
               }
             }
           }
-        `
-      });
-
-      const agents = result.data.agents.edges;
-      results.push(`📋 Found ${agents.length} agents in the system`);
-      
-      agents.forEach((edge: any, index: number) => {
-        const agent = edge.node;
-        results.push(`  ${index + 1}. ${agent.name} (${agent.note || 'No description'})`);
-      });
-    } catch (error) {
-      results.push(`❌ Error querying agents: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      isWorking = false;
-    }
-  }
-
-  async function createResourceSpec() {
-    if (!apolloClient) return;
-    
-    isWorking = true;
-    try {
-      const result = await apolloClient.mutate({
-        mutation: gql`
-          mutation CreateResourceSpecification($resourceSpecification: ResourceSpecificationCreateParams!) {
-            createResourceSpecification(resourceSpecification: $resourceSpecification) {
-              resourceSpecification {
-                id
-                name
-                note
-              }
-            }
-          }
         `,
-        variables: {
-          resourceSpecification: {
-            name: `Resource Spec ${Date.now()}`,
-            note: "Example resource specification"
-          }
-        }
+        fetchPolicy: "network-only",
       });
 
-      const spec = result.data.createResourceSpecification.resourceSpecification;
-      results.push(`📦 Created Resource Specification: ${spec.name} (ID: ${spec.id})`);
+      const agents = result.data?.agents?.edges || [];
+      if (agents.length === 0) {
+        results.push("ℹ️ No agents found. Create some agents first!");
+      } else {
+        results.push(`📋 Found ${agents.length} agents:`);
+        agents.forEach((edge: any, index: number) => {
+          const agent = edge.node;
+          results.push(`  ${index + 1}. ${agent.name} (${agent.id})`);
+        });
+      }
     } catch (error) {
-      results.push(`❌ Error creating resource spec: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.push(`❌ Failed to query agents: ${(error as Error).message}`);
     } finally {
-      isWorking = false;
+      isLoading = false;
     }
   }
 
@@ -527,231 +678,243 @@ This is a new component that demonstrates basic hREA operations. Create this fil
   }
 </script>
 
-<div class="hrea-demo">
-  <header>
-    <h1>🌊 hREA Integration Demo</h1>
-    <p>Test basic hREA operations with ValueFlows concepts</p>
-  </header>
+<div class="hrea-example">
+  <h2>hREA Basic Example</h2>
+  <p>This demonstrates core hREA operations using the ValueFlows ontology:</p>
 
-  <div class="demo-section">
-    <h2>🏢 Agent Management</h2>
-    <p>Create and manage economic agents (people and organizations)</p>
-    
-    <div class="button-group">
-      <button onclick={createPerson} disabled={isWorking}>
-        {isWorking ? "Working..." : "Create Person"}
-      </button>
-      
-      <button onclick={createOrganization} disabled={isWorking}>
-        {isWorking ? "Working..." : "Create Organization"}
-      </button>
+  <div class="examples">
+    <div class="example-section">
+      <h3>👤 Agents</h3>
+      <p>
+        Agents are people, organizations, or groups that participate in economic
+        activities.
+      </p>
+      <div class="buttons">
+        <button onclick={createPerson} disabled={isLoading}>
+          Create Person
+        </button>
+        <button onclick={createOrganization} disabled={isLoading}>
+          Create Organization
+        </button>
+        <button onclick={queryAgents} disabled={isLoading}>
+          List All Agents
+        </button>
+      </div>
+    </div>
 
-      <button onclick={queryAgents} disabled={isWorking}>
-        {isWorking ? "Working..." : "List All Agents"}
+    <div class="example-section">
+      <h3>📦 Resources</h3>
+      <p>
+        Resources are physical or digital assets that can be used, consumed, or
+        produced.
+      </p>
+      <div class="buttons">
+        <button onclick={createResourceSpec} disabled={isLoading}>
+          Create Resource Specification
+        </button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick={clearResults} class="clear-button">
+        Clear Results
       </button>
     </div>
   </div>
 
-  <div class="demo-section">
-    <h2>📦 Resource Management</h2>
-    <p>Define types of resources for economic activities</p>
-    
-    <div class="button-group">
-      <button onclick={createResourceSpec} disabled={isWorking}>
-        {isWorking ? "Working..." : "Create Resource Specification"}
-      </button>
-    </div>
-  </div>
-
-  <div class="results-section">
-    <div class="results-header">
-      <h3>📄 Results</h3>
-      <button onclick={clearResults} class="clear-button">Clear</button>
-    </div>
-    
-    <div class="results-log">
-      {#each results as result, index (index)}
-        <div class="result-item">{result}</div>
-      {:else}
-        <div class="no-results">No operations performed yet. Try the buttons above!</div>
+  <div class="results">
+    <h3>Results:</h3>
+    <div class="results-container">
+      {#each results as result}
+        <div class="result-line">{result}</div>
       {/each}
+      {#if results.length === 0}
+        <p class="no-results">
+          Click the buttons above to try hREA operations!
+        </p>
+      {/if}
     </div>
   </div>
 </div>
 
 <style>
-  .hrea-demo {
+  .hrea-example {
+    padding: 20px;
     max-width: 800px;
     margin: 0 auto;
-    padding: 2rem;
-    font-family: system-ui, -apple-system, sans-serif;
   }
 
-  header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e5e7eb;
+  h2 {
+    color: #fff;
+    margin-bottom: 10px;
   }
 
-  header h1 {
-    margin: 0;
-    color: #1f2937;
-    font-size: 2.5rem;
+  h3 {
+    color: #fff;
+    font-size: 1.2em;
+    margin-bottom: 8px;
   }
 
-  header p {
-    margin: 0.5rem 0 0;
-    color: #6b7280;
-    font-size: 1.1rem;
+  p {
+    color: #ccc;
+    margin-bottom: 15px;
+    line-height: 1.4;
   }
 
-  .demo-section {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background-color: #f9fafb;
+  .examples {
+    margin-bottom: 30px;
+  }
+
+  .example-section {
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    padding: 20px;
+    margin-bottom: 20px;
   }
 
-  .demo-section h2 {
-    margin: 0 0 0.5rem;
-    color: #374151;
-    font-size: 1.5rem;
-  }
-
-  .demo-section p {
-    margin: 0 0 1rem;
-    color: #6b7280;
-  }
-
-  .button-group {
+  .buttons {
     display: flex;
+    gap: 10px;
     flex-wrap: wrap;
-    gap: 0.5rem;
   }
 
   button {
-    padding: 0.75rem 1.5rem;
-    background-color: #3b82f6;
+    padding: 10px 16px;
+    background: #007acc;
     color: white;
     border: none;
     border-radius: 6px;
-    font-weight: 500;
     cursor: pointer;
+    font-size: 14px;
     transition: background-color 0.2s;
   }
 
   button:hover:not(:disabled) {
-    background-color: #2563eb;
+    background: #005999;
   }
 
   button:disabled {
-    background-color: #9ca3af;
+    background: #666;
     cursor: not-allowed;
   }
 
-  .results-section {
-    margin-top: 2rem;
-  }
-
-  .results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .results-header h3 {
-    margin: 0;
-    color: #374151;
-  }
-
   .clear-button {
-    padding: 0.5rem 1rem;
-    background-color: #ef4444;
-    font-size: 0.875rem;
+    background: #666;
   }
 
   .clear-button:hover:not(:disabled) {
-    background-color: #dc2626;
+    background: #888;
   }
 
-  .results-log {
-    background-color: #1f2937;
-    color: #f9fafb;
-    padding: 1rem;
-    border-radius: 6px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.875rem;
+  .actions {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .results {
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .results h3 {
+    margin: 0;
+    padding: 15px 20px 10px;
+    border-bottom: 1px solid #444;
+  }
+
+  .results-container {
+    padding: 15px 20px 20px;
     max-height: 400px;
     overflow-y: auto;
   }
 
-  .result-item {
-    margin-bottom: 0.5rem;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid #374151;
-  }
-
-  .result-item:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
+  .result-line {
+    color: #fff;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    margin: 4px 0;
+    padding: 2px 0;
+    line-height: 1.3;
   }
 
   .no-results {
-    color: #9ca3af;
+    color: #888;
     font-style: italic;
     text-align: center;
-    padding: 2rem;
+    margin: 20px 0;
   }
 </style>
 ```
 
-### Step 5: Update Your Main App Component
+### Step 6: Update Your Main App Component
 
 The scaffolded application already includes an `ui/src/App.svelte` file. **Replace its content** with the following to include the hREA integration:
 
 ```svelte
 <script lang="ts">
+  import logo from "./assets/holochainLogo.svg";
   import ClientProvider from "./ClientProvider.svelte";
   import HREATest from "./HREATest.svelte";
 </script>
 
 <ClientProvider>
-  <main>
-    <h1>Your Holochain App with hREA</h1>
-    <HREATest />
-  </main>
+  <div>
+    <div>
+      <a href="https://developer.holochain.org/get-started/" target="_blank">
+        <img src={logo} class="logo holochain" alt="holochain logo" />
+      </a>
+    </div>
+    <h1>Holochain Svelte hApp</h1>
+    <div>
+      <div class="card">
+        <p>Welcome to the hREA Basic Example!</p>
+        <p>
+          This demonstrates how to integrate hREA with Holochain using Svelte 5
+          runes.
+        </p>
+      </div>
+
+      <!-- hREA Basic Example -->
+      <HREATest />
+    </div>
+  </div>
 </ClientProvider>
 
 <style>
-  main {
-    text-align: center;
-    padding: 1em;
-    max-width: 240px;
-    margin: 0 auto;
+  .logo {
+    height: 15em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
+    width: auto;
   }
 
-  h1 {
-    color: #ff3e00;
-    text-transform: uppercase;
-    font-size: 4em;
-    font-weight: 100;
+  .logo:hover {
+    filter: drop-shadow(0 0 2em #646cffaa);
   }
 
-  @media (min-width: 640px) {
-    main {
-      max-width: none;
-    }
+  .logo.holochain:hover {
+    filter: drop-shadow(0 0 2em #61dafbaa);
+  }
+
+  .card {
+    padding: 2em;
+  }
+
+  .card p {
+    color: #ccc;
+    margin: 8px 0;
+    line-height: 1.4;
   }
 </style>
 ```
 
 **What this does:**
 - Wraps your app with `ClientProvider` to manage Holochain and hREA connections
+- Includes the Holochain logo and branding from the scaffolded template
 - Includes the `HREATest` component to demonstrate basic hREA operations
-- Provides a clean UI foundation for your hREA-enabled application
+- Provides a clean UI foundation with proper styling for your hREA-enabled application
 
 ## Quick Start (10 Minutes)
 
@@ -807,47 +970,93 @@ npm start  # or your chosen package manager
 
 ### Key Files and Their Purpose
 
-#### 1. `ui/src/contexts.ts` - Integration Logic
-This file manages the connection between Svelte, Holochain, and hREA:
+#### 1. `ui/src/contexts.svelte.ts` - Integration Logic
+This file manages the connection between Svelte, Holochain, and hREA using Svelte 5 runes and contexts:
 
 ```typescript
-// Holochain WebSocket connection
-export function createClientStore() { /* ... */ }
+// Holochain client state with runes
+export class HolochainClientState {
+  client = $state<AppClient | undefined>(undefined);
+  // Connect to Holochain WebSocket
+  async connect() { /* ... */ }
+}
 
-// hREA GraphQL client initialization  
-export function initializeHREA() { /* ... */ }
+// hREA GraphQL client state with runes
+export class HREAClientState {
+  client = $state<ApolloClient<any> | undefined>(undefined);
+  // Initialize with createHolochainSchema and SchemaLink
+  async initialize(holochainClient: AppClient) { /* ... */ }
+}
 
-// Get Apollo client for hREA operations
-export function getApolloClient() { /* ... */ }
+// Context providers for Svelte components
+export function getHolochainClient() { /* ... */ }
+export function getHREAClient() { /* ... */ }
 ```
 
 #### 2. `ui/src/ClientProvider.svelte` - Context Provider
-Manages connection state and makes clients available to child components:
+Manages connection state and makes clients available to child components using Svelte contexts:
 
 ```svelte
+<script lang="ts">
+  // Create state instances and set them in context
+  const holochainState = createHolochainClientState();
+  const hreaState = createHREAClientState();
+  
+  setContext(CLIENT_CONTEXT_KEY, holochainState);
+  setContext(APOLLO_CLIENT_CONTEXT_KEY, hreaState);
+  
+  // Initialize hREA when Holochain is ready
+  $effect(() => {
+    if (holochainState.client && !hreaState.client) {
+      hreaState.initialize(holochainState.client);
+    }
+  });
+</script>
+
 <!-- Handles connection states -->
-{#if loading}
+{#if holochainState.loading}
   <div class="status connecting">Connecting...</div>
-{:else if client && apolloClient}
+{:else if holochainState.client && hreaState.client}
   <!-- App content when everything is ready -->
+  {@render children?.()}
 {/if}
 ```
 
 #### 3. `ui/src/HREATest.svelte` - Basic Example
-Demonstrates core hREA operations:
+Demonstrates core hREA operations using Svelte 5 runes and context:
 
 ```typescript
-// Example: Create a person agent
-const result = await apolloClient.mutate({
-  mutation: gql`
-    mutation CreatePerson($person: AgentCreateParams!) {
-      createPerson(person: $person) {
-        agent { id name }
+<script lang="ts">
+  import { getHREAClient } from "./contexts.svelte";
+  import { gql } from "@apollo/client/core";
+
+  // Get hREA client state from context
+  const hreaState = getHREAClient();
+  
+  // Reactive derived value for Apollo client
+  let apolloClient = $derived(hreaState.client);
+
+  // Example: Create a person agent
+  async function createPerson() {
+    if (!apolloClient) return;
+    
+    const result = await apolloClient.mutate({
+      mutation: gql`
+        mutation CreatePerson($person: AgentCreateParams!) {
+          createPerson(person: $person) {
+            agent { id name note }
+          }
+        }
+      `,
+      variables: { 
+        person: { 
+          name: `Person ${Date.now()}`,
+          note: "Created via hREA basic example"
+        }
       }
-    }
-  `,
-  variables: { person: { name: "John Doe" } }
-});
+    });
+  }
+</script>
 ```
 
 #### 4. `workdir/happ.yaml` - App Configuration

@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use hc_test_integrity::*;
+use user_integrity::*;
 
 // Called the first time a zome call is made to the cell containing this zome
 #[hdk_extern]
