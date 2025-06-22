@@ -27,7 +27,7 @@
         "@apollo/client": "^3.13.8",
         "@holochain/client": "^0.19.0",
         "@msgpack/msgpack": "^2.8.0",
-        "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.9",
+        "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
         "graphql": "^16.8.0",
       },
       "devDependencies": {
@@ -235,7 +235,7 @@
 
     "@valueflows/vf-graphql": ["@valueflows/vf-graphql@0.9.1-alpha.4", "", { "dependencies": { "@graphql-tools/merge": "^8.3.16" }, "peerDependencies": { "graphql": ">=14" } }, "sha512-W94FacZnp/6W6zk+XCeMIWEDURh59Qb8hgz1TpsEC0caqxvTgQTGUI7m2RjAfb/van2usmKHtZyLIZb5tkwNYw=="],
 
-    "@valueflows/vf-graphql-holochain": ["@valueflows/vf-graphql-holochain@0.0.3-alpha.9", "", { "dependencies": { "@graphql-tools/schema": "^10.0.23", "@valueflows/vf-graphql": "^0.9.1-alpha.4", "graphql": "16.11.0", "graphql-tag": "2.12.6", "signal-polyfill": "0.2.2", "signal-utils": "0.21.1" } }, "sha512-S4EKH26OSvu5nee0fs1gsSaEoUDa7zvLm5usL4VnHW/kZtYwqZYtQpuaxV6ePN96MppIgiWs2NBDhH8YORiJPw=="],
+    "@valueflows/vf-graphql-holochain": ["@valueflows/vf-graphql-holochain@0.0.3-alpha.10", "", { "dependencies": { "@graphql-tools/schema": "^10.0.23", "@valueflows/vf-graphql": "^0.9.1-alpha.4", "graphql": "16.11.0", "graphql-tag": "2.12.6", "signal-polyfill": "0.2.2", "signal-utils": "0.21.1" } }, "sha512-X8AR6EEwRw9SySjCXv7AjiuLyriQjrfY4lu9+Vjauat9Jq2P3UnqTiBzJlw1OIOmT9CJB89asuNv4V2ZDG52rg=="],
 
     "@vitest/expect": ["@vitest/expect@3.2.4", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/spy": "3.2.4", "@vitest/utils": "3.2.4", "chai": "^5.2.0", "tinyrainbow": "^2.0.0" } }, "sha512-Io0yyORnB6sikFlt8QW5K7slY4OjqNX9jmJQ02QDda8lyM6B5oNgVWoSoKPac8/kgnCUzuHQKrSLtu/uOqqrig=="],
 

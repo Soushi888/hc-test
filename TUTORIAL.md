@@ -104,7 +104,7 @@ npm install  # or your chosen package manager
     "@apollo/client": "^3.13.8",
     "@holochain/client": "^0.19.0",
     "@msgpack/msgpack": "^2.8.0",
-    "@valueflows/vf-graphql-holochain": "^0.3.1",
+    "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
     "graphql": "^16.8.0"
   }
 }
@@ -114,7 +114,7 @@ npm install  # or your chosen package manager
 - `@apollo/client` - GraphQL client for React/Svelte integration
 - `@holochain/client` - Official Holochain client for WebSocket connections
 - `@msgpack/msgpack` - MessagePack serialization (required by Holochain client)
-- `@valueflows/vf-graphql-holochain` - hREA v0.3.1 GraphQL schema and utilities
+- `@valueflows/vf-graphql-holochain` - hREA v0.3.1 GraphQL schema and utilities (version 0.0.3-alpha.10)
 - `graphql` - Core GraphQL library
 
 Install the dependencies:
@@ -1067,6 +1067,8 @@ For a more Svelte-idiomatic approach, you could use `svelte-apollo` instead of d
   }
 }
 ```
+
+> **📝 Note**: This alternative approach still uses the same `@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10"` version that corresponds to hREA v0.3.1.
 
 ### Updated `contexts.svelte.ts` with svelte-apollo
 ```typescript
