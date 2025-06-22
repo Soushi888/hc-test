@@ -24,3 +24,8 @@
 .hc*
 .running
 .hc
+
+# AI IDE
+.cursorrules
+.cursor
+.windsurf
