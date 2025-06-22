@@ -1,10 +1,14 @@
 # hREA Get-Started Guide: Svelte Integration
 
-Official reference implementation for integrating [hREA (Holochain Resource-Event-Agent)](https://github.com/h-REA/hREA) into Svelte scaffolded Holochain applications. This project serves as the foundation for hREA's official get-started documentation and establishes the integration pattern for other frameworks.
+Official reference implementation for integrating [hREA (Holochain Resource-Event-Agent) v0.3.1](https://github.com/h-REA/hREA) into **scaffolded** Svelte Holochain applications. This project serves as the foundation for hREA's official get-started documentation and establishes the integration pattern for other frameworks.
+
+> **📌 Version**: This guide is specifically designed for **hREA v0.3.1**
 
 ## Overview
 
-This project demonstrates the clean, minimal approach to integrating hREA with Holochain applications. It provides a step-by-step example that will be used in the official hREA documentation and serves as the template for creating similar guides for Lit, non-scaffolded applications, and other frameworks.
+This project demonstrates the clean, minimal approach to integrating hREA with **scaffolded Holochain applications** created using the [official Holochain scaffolding tool](https://developer.holochain.org/get-started/3-forum-app-tutorial/). It provides a step-by-step example that will be used in the official hREA documentation and serves as the template for creating similar guides for Lit, non-scaffolded applications, and other frameworks.
+
+**📋 Prerequisites**: This guide assumes you have already created a Holochain application using the official scaffolding tool with Svelte as the UI framework. If you haven't done this yet, follow the [Holochain Development Environment setup](https://developer.holochain.org/get-started/#2-installing-holochain-development-environment) and create a scaffolded app first.
 
 ### Key Features
 
@@ -44,53 +48,53 @@ This project demonstrates the clean, minimal approach to integrating hREA with H
 
 ## Prerequisites
 
-Before getting started, ensure you have:
+This guide assumes you already have a **scaffolded Holochain application**. If not, you need to:
 
-- **Node.js** (v16+)
-- **Bun** (latest version)
-- **Holochain dev tools**:
-  - `hc` (Holochain CLI)
-  - `hc-spin` (Holochain development server)
-- **Rust** (for building DNA zomes)
+### 1. Install Holochain Development Environment
+Follow the official guide: [Installing Holochain Development Environment](https://developer.holochain.org/get-started/#2-installing-holochain-development-environment)
 
-### Installing Prerequisites
+### 2. Create a Scaffolded Holochain App
+Create a new scaffolded web app:
+```bash
+nix run "github:/holochain/holonix?ref=main-0.5#hc-scaffold" -- web-app
+```
+Choose **Svelte** as your UI framework during scaffolding.
+
+### 3. Additional Requirements
+For hREA integration, ensure you also have:
 
 ```bash
-# Install Bun
+# Add WebAssembly target for Rust
+rustup target add wasm32-unknown-unknown
+
+# Install Bun (if you chose it as package manager)
 curl -fsSL https://bun.sh/install | bash
-
-# Install Holochain dev tools
-bash <(curl https://holochain.org/setup)
-
-# Verify installations
-hc --version
-cargo --version
-bun --version
 ```
 
-## Quick Start (Get hREA Working in Under 10 Minutes)
+## Quick Start (Add hREA to Your Scaffolded App in Under 10 Minutes)
 
-### 1. Clone and Setup
+**Note**: These steps assume you already have a scaffolded Holochain app. If not, see the Prerequisites section above.
+
+### 1. Add hREA to Your Existing Scaffolded App
+
+Navigate to your scaffolded app directory and follow the integration steps in the [detailed tutorial](./TUTORIAL.md):
+
+1. Add hREA role to your `workdir/happ.yaml`
+2. Add hREA dependencies to your UI
+3. Copy the integration files from this repository
+4. Update your main App component
+
+### 2. Start Your Integrated Application
 
 ```bash
-git clone <repository-url>
-cd hc-test
-bun install
+npm start  # or your chosen package manager
 ```
 
-The hREA DNA will be automatically downloaded during installation.
-
-### 2. Start the Application
-
-```bash
-bun start
-```
-
-This single command will:
-- Download hREA DNA (if not already present)
-- Build the Holochain DNA and hApp bundle
+This command will:
+- Build your custom Rust zomes plus hREA integration
+- Package your hApp bundle with hREA DNA included
 - Start the Svelte development server
-- Launch Holochain with 2 agents
+- Launch Holochain with your agents
 - Open Holochain Playground for debugging
 
 ### 3. Try the Basic Example

@@ -1,19 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { setContext } from "svelte";
   import logo from "./assets/holochainLogo.svg";
   import ClientProvider from "./ClientProvider.svelte";
   import HREATest from "./HREATest.svelte";
-  import { CLIENT_CONTEXT_KEY, createClientStore } from "./contexts";
-
-  const clientStore = createClientStore();
-  setContext(CLIENT_CONTEXT_KEY, clientStore);
-
-  let { error, loading } = $derived($clientStore);
-
-  onMount(() => {
-    clientStore.connect();
-  });
 </script>
 
 <ClientProvider>
@@ -26,16 +14,14 @@
     <h1>Holochain Svelte hApp</h1>
     <div>
       <div class="card">
-        {#if loading}
-          <p>connecting...</p>
-        {:else if error}
-          <p>{error.message}</p>
-        {:else}
-          <p>Client is connected.</p>
-        {/if}
+        <p>Welcome to the hREA Basic Example!</p>
+        <p>
+          This demonstrates how to integrate hREA with Holochain using Svelte 5
+          runes.
+        </p>
       </div>
 
-      <!-- hREA Testing Section -->
+      <!-- hREA Basic Example -->
       <HREATest />
     </div>
   </div>
@@ -60,5 +46,11 @@
 
   .card {
     padding: 2em;
+  }
+
+  .card p {
+    color: #ccc;
+    margin: 8px 0;
+    line-height: 1.4;
   }
 </style>
