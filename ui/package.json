@@ -7,11 +7,8 @@
     "package": "bun run build && rimraf dist.zip && cd dist && bestzip ../dist.zip *"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.8",
     "@holochain/client": "^0.19.0",
-    "@msgpack/msgpack": "^2.8.0",
-    "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
-    "graphql": "^16.8.0"
+    "@msgpack/msgpack": "^2.8.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
@@ -21,7 +18,10 @@
     "svelte": "^5.0.0",
     "tslib": "^2.8.0",
     "typescript": "^5.6.3",
-    "vite": "^6.2.5"
+    "vite": "^6.2.5",
+    "@apollo/client": "^3.13.8",
+    "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
+    "graphql": "^16.8.0"
   },
   "type": "module"
 }

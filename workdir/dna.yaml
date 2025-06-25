@@ -1,19 +1,19 @@
 manifest_version: "1"
-name: hrea_tests
+name: hc_test
 integrity:
   network_seed: null
   properties: null
   zomes:
-    - name: user_integrity
+    - name: hc_test_integrity
       hash: null
-      bundled: ../target/wasm32-unknown-unknown/release/user_integrity.wasm
+      bundled: ../target/wasm32-unknown-unknown/release/hc_test_integrity.wasm
       dependencies: null
       dylib: null
 coordinator:
   zomes:
-    - name: user
+    - name: hc_test
       hash: null
-      bundled: ../target/wasm32-unknown-unknown/release/user.wasm
+      bundled: ../target/wasm32-unknown-unknown/release/hc_test.wasm
       dependencies:
-        - name: user_integrity
+        - name: hc_test_integrity
       dylib: null

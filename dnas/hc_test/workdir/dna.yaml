@@ -1,0 +1,19 @@
+manifest_version: '1'
+name: hc_test
+integrity:
+  network_seed: null
+  properties: null
+  zomes:
+  - name: hc_test_integrity
+    hash: null
+    bundled: ../../../target/wasm32-unknown-unknown/release/hc_test_integrity.wasm
+    dependencies: null
+    dylib: null
+coordinator:
+  zomes:
+  - name: hc_test
+    hash: null
+    bundled: ../../../target/wasm32-unknown-unknown/release/hc_test.wasm
+    dependencies:
+    - name: hc_test_integrity
+    dylib: null
