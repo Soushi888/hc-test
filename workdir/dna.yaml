@@ -1,0 +1,19 @@
+manifest_version: "1"
+name: hrea_tests
+integrity:
+  network_seed: null
+  properties: null
+  zomes:
+    - name: user_integrity
+      hash: null
+      bundled: ../target/wasm32-unknown-unknown/release/user_integrity.wasm
+      dependencies: null
+      dylib: null
+coordinator:
+  zomes:
+    - name: user
+      hash: null
+      bundled: ../target/wasm32-unknown-unknown/release/user.wasm
+      dependencies:
+        - name: user_integrity
+      dylib: null

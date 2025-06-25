@@ -1,8 +1,13 @@
 # hREA Integration Tutorial: Svelte + Holochain
 
-A step-by-step guide to integrating **hREA v0.3.1** into your **scaffolded** Svelte Holochain application.
+A step-by-step guide to integrating **hREA v0.3.2** into your **scaffolded** Svelte Holochain application.
 
-> **⚠️ Version Notice**: This tutorial is specifically designed for **hREA version 0.3.1**. Different versions may require different integration steps.
+> **⚠️ Version Compatibilxity Notice**:
+> - **hREA v0.3.2** is compatible with **Holochain 0.5.x**
+> - **hREA v0.3.1** is compatible with **Holochain 0.4.x**
+>
+> This tutorial is specifically designed for **hREA version 0.3.2**. Different versions may require different integration steps.
+
 
 ## Prerequisites
 
@@ -131,13 +136,13 @@ roles:
 
 ### Step 3: Download hREA DNA
 
-**Edit your `package.json`** to add hREA v0.3.1 DNA download:
+**Edit your `package.json`** to add hREA v0.3.2 DNA download:
 ```json
 {
   "scripts": {
     "postinstall": "bun run download-hrea",
     // other scripts...
-    "download-hrea": "[ ! -f \"workdir/hrea.dna\" ] && curl -L --output workdir/hrea.dna https://github.com/h-REA/hREA/releases/download/happ-0.3.1-beta/hrea.dna; exit 0"
+    "download-hrea": "[ ! -f \"workdir/hrea.dna\" ] && curl -L --output workdir/hrea.dna https://github.com/h-REA/hREA/releases/download/happ-0.3.2-beta/hrea.dna; exit 0"
   }
 }
 ```
@@ -149,24 +154,22 @@ npm install  # or your chosen package manager
 
 ### Step 4: Add hREA Dependencies
 
-**Add to your UI `package.json`** (compatible with hREA v0.3.1):
+**Add to your UI `package.json`** (compatible with hREA v0.3.2):
 ```json
 {
   "dependencies": {
     "@apollo/client": "^3.13.8",
-    "@holochain/client": "^0.19.0",
-    "@msgpack/msgpack": "^2.8.0",
     "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
     "graphql": "^16.8.0"
   }
 }
 ```
 
-**Key dependencies explained (for hREA v0.3.1):**
+**Key dependencies explained (for hREA v0.3.2):**
 - `@apollo/client` - GraphQL client for React/Svelte integration (includes SchemaLink)
 - `@holochain/client` - Official Holochain client for WebSocket connections
 - `@msgpack/msgpack` - MessagePack serialization (required by Holochain client)
-- `@valueflows/vf-graphql-holochain` - hREA v0.3.1 GraphQL schema and utilities (version 0.0.3-alpha.10) - provides `createHolochainSchema`
+- `@valueflows/vf-graphql-holochain` - hREA v0.3.2 GraphQL schema and utilities (version 0.0.3-alpha.10) - provides `createHolochainSchema`
 - `graphql` - Core GraphQL library
 
 Install the dependencies:
@@ -175,11 +178,49 @@ cd ui
 npm install  # or your chosen package manager
 ```
 
-### Step 5: Modify Integration Files
+### Step 5: Copy and Adjust DNA Manifest
+
+Before integrating hREA, you need to copy your custom DNA manifest to the root `workdir` folder and adjust the relative paths for proper bundling.
+
+**Copy your DNA manifest:**
+```bash
+# From your project root directory
+cp dnas/your_dna_name/dna.yaml workdir/dna.yaml
+```
+
+**Edit `workdir/dna.yaml`** to adjust the relative paths from `../../../` to `../`:
+
+```yaml
+manifest_version: "1"
+name: your_dna_name
+integrity:
+  network_seed: null
+  properties: null
+  zomes:
+    - name: your_zome_integrity
+      hash: null
+      bundled: ../target/wasm32-unknown-unknown/release/your_zome_integrity.wasm  # Changed from ../../../
+      dependencies: null
+      dylib: null
+coordinator:
+  zomes:
+    - name: your_zome
+      hash: null
+      bundled: ../target/wasm32-unknown-unknown/release/your_zome.wasm  # Changed from ../../../
+      dependencies:
+        - name: your_zome_integrity
+      dylib: null
+```
+
+> **📝 Note**: Replace `your_dna_name`, `your_zome_integrity`, and `your_zome` with your actual DNA and zome names from your scaffolded application.
+
+This step ensures that both your custom DNA and the hREA DNA can be properly bundled together in the final application.
+
+### Step 6: Modify Integration Files
 
 The scaffolded Holochain application already includes basic files that we need to modify for hREA integration. We'll update these files to use modern Svelte 5 runes for optimal performance and developer experience.
 
-#### 5.1. Replace `ui/src/contexts.ts` with `ui/src/contexts.svelte.ts`
+#### 6.1. Replace `ui/src/contexts.ts` with `ui/src/contexts.svelte.ts`
 
 First, delete the existing `ui/src/contexts.ts` file and create `ui/src/contexts.svelte.ts` with Svelte 5 rune-based state management:
 
@@ -324,7 +365,7 @@ export function getApolloClient(): ApolloClient<any> {
 }
 ```
 
-#### 5.2. Create or Replace `ui/src/ClientProvider.svelte`
+#### 6.2. Create or Replace `ui/src/ClientProvider.svelte`
 
 If this file doesn't exist in your scaffolded app, create it. If it exists, replace its content with the following. This component manages connection states and provides clients to child components:
 
@@ -470,7 +511,7 @@ If this file doesn't exist in your scaffolded app, create it. If it exists, repl
 </style>
 ```
 
-#### 5.3. Create `ui/src/HREATest.svelte`
+#### 6.3. Create `ui/src/HREATest.svelte`
 
 This is a new component that demonstrates basic hREA operations. Create this file in your scaffolded app:
 
@@ -847,7 +888,7 @@ This is a new component that demonstrates basic hREA operations. Create this fil
 </style>
 ```
 
-### Step 6: Update Your Main App Component
+### Step 7: Update Your Main App Component
 
 The scaffolded application already includes an `ui/src/App.svelte` file. **Replace its content** with the following to include the hREA integration:
 
@@ -957,14 +998,14 @@ npm start  # or your chosen package manager
 
 ```
 ┌─────────────────────────────────────────────────┐
-│               Svelte Frontend                   │  
+│               Svelte Frontend                   │
 ├─────────────────────────────────────────────────┤
-│    Apollo Client + GraphQL (ValueFlows)        │  
+│    Apollo Client + GraphQL (ValueFlows)         │
 ├─────────────────────────────────────────────────┤
-│           Holochain Client (WebSocket)          │  
+│           Holochain Client (WebSocket)          │
 ├─────────────────────────────────────────────────┤
-│        hREA DNA      │      Custom DNA         │  
-│   (Economic Logic)   │  (App-specific Logic)   │  
+│        hREA DNA      │      Custom DNA          │
+│   (Economic Logic)   │  (App-specific Logic)    │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -1001,10 +1042,10 @@ Manages connection state and makes clients available to child components using S
   // Create state instances and set them in context
   const holochainState = createHolochainClientState();
   const hreaState = createHREAClientState();
-  
+
   setContext(CLIENT_CONTEXT_KEY, holochainState);
   setContext(APOLLO_CLIENT_CONTEXT_KEY, hreaState);
-  
+
   // Initialize hREA when Holochain is ready
   $effect(() => {
     if (holochainState.client && !hreaState.client) {
@@ -1032,14 +1073,14 @@ Demonstrates core hREA operations using Svelte 5 runes and context:
 
   // Get hREA client state from context
   const hreaState = getHREAClient();
-  
+
   // Reactive derived value for Apollo client
   let apolloClient = $derived(hreaState.client);
 
   // Example: Create a person agent
   async function createPerson() {
     if (!apolloClient) return;
-    
+
     const result = await apolloClient.mutate({
       mutation: gql`
         mutation CreatePerson($person: AgentCreateParams!) {
@@ -1048,8 +1089,8 @@ Demonstrates core hREA operations using Svelte 5 runes and context:
           }
         }
       `,
-      variables: { 
-        person: { 
+      variables: {
+        person: {
           name: `Person ${Date.now()}`,
           note: "Created via hREA basic example"
         }
@@ -1079,7 +1120,7 @@ Entities that participate in economic activities:
 - **Person**: Individual human agents
 - **Organization**: Collective agents (companies, cooperatives, etc.)
 
-### Resources  
+### Resources
 Assets that can be used, consumed, or produced:
 - **Resource Specification**: Definition of a type of resource
 - **Resource**: Actual instances of resources
@@ -1155,7 +1196,7 @@ const queryAgents = async () => {
       }
     `
   });
-  
+
   const agents = result.data.agents.edges;
   return agents.map(edge => edge.node);
 };
@@ -1190,17 +1231,17 @@ const createResourceSpec = async () => {
 
 #### 1. "can't find crate for `core`" Error
 **Problem**: WebAssembly target not installed
-**Solution**: 
+**Solution**:
 ```bash
 rustup target add wasm32-unknown-unknown
 ```
 
 #### 2. "hREA DNA not found" Error
-**Problem**: hREA v0.3.1 DNA not downloaded
+**Problem**: hREA v0.3.2 DNA not downloaded
 **Solution**:
 ```bash
-# Download hREA v0.3.1 DNA manually
-curl -L https://github.com/h-REA/hREA/releases/download/v0.3.1/hrea.dna -o workdir/hrea.dna
+# Download hREA v0.3.2 DNA manually
+curl -L https://github.com/h-REA/hREA/releases/download/v0.3.2/hrea.dna -o workdir/hrea.dna
 
 # Or run the postinstall script
 npm run postinstall
@@ -1237,7 +1278,7 @@ If you encounter persistent issues:
 # Clean Holochain sandbox
 hc sandbox clean
 
-# Clean Rust build artifacts  
+# Clean Rust build artifacts
 cargo clean
 
 # Reinstall dependencies
@@ -1257,8 +1298,8 @@ Once you have the basic example working:
 
 ## Resources
 
-- [hREA Documentation](https://github.com/h-REA/hREA) (this tutorial uses v0.3.1)
-- [hREA v0.3.1 Release](https://github.com/h-REA/hREA/releases/tag/v0.3.1)
+- [hREA Documentation](https://github.com/h-REA/hREA) (this tutorial uses v0.3.2)
+- [hREA v0.3.2 Release](https://github.com/h-REA/hREA/releases/tag/v0.3.2)
 - [ValueFlows Specification](https://www.valueflo.ws/)
 - [Holochain Developer Docs](https://developer.holochain.org/)
 - [Svelte Documentation](https://svelte.dev/docs)
@@ -1266,7 +1307,7 @@ Once you have the basic example working:
 
 ## Alternative Implementation: Using svelte-apollo
 
-For a more Svelte-idiomatic approach, you could use `svelte-apollo` instead of direct Apollo Client. Here's how the code would look with hREA v0.3.1:
+For a more Svelte-idiomatic approach, you could use `svelte-apollo` instead of direct Apollo Client. Here's how the code would look with hREA v0.3.2:
 
 ### Additional Dependency
 ```json
@@ -1277,7 +1318,7 @@ For a more Svelte-idiomatic approach, you could use `svelte-apollo` instead of d
 }
 ```
 
-> **📝 Note**: This alternative approach still uses the same `@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10"` version that corresponds to hREA v0.3.1.
+> **📝 Note**: This alternative approach still uses the same `@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10"` version that corresponds to hREA v0.3.2.
 
 ### Updated `contexts.svelte.ts` with svelte-apollo
 ```typescript
@@ -1412,8 +1453,12 @@ export function getHREAClient() {
     }
   `);
 
-  // Reactive agents list from the query store
-  $: agents = $agentsQuery.data?.agents?.edges?.map(edge => edge.node) || [];
+  // Reactive agents list from the query store using Svelte 5 runes
+  let agents = $state([]);
+
+  $effect(() => {
+    agents = $agentsQuery.data?.agents?.edges?.map(edge => edge.node) || [];
+  });
 
   // Event handlers using the mutation stores
   async function handleCreatePerson() {
@@ -1471,12 +1516,12 @@ export function getHREAClient() {
   <div class="demo-section">
     <h2>🏢 Agent Management</h2>
     <p>Create and manage economic agents (people and organizations)</p>
-    
+
     <div class="button-group">
       <button on:click={handleCreatePerson} disabled={$createPersonMutation.loading}>
         {$createPersonMutation.loading ? "Creating..." : "Create Person"}
       </button>
-      
+
       <button on:click={handleCreateOrganization} disabled={$createOrgMutation.loading}>
         {$createOrgMutation.loading ? "Creating..." : "Create Organization"}
       </button>
@@ -1512,7 +1557,7 @@ export function getHREAClient() {
     {#if $createPersonMutation.error}
       <div class="error">Error creating person: {$createPersonMutation.error.message}</div>
     {/if}
-    
+
     {#if $createOrgMutation.error}
       <div class="error">Error creating organization: {$createOrgMutation.error.message}</div>
     {/if}
@@ -1552,9 +1597,3 @@ export function getHREAClient() {
 - ❌ Less explicit control over caching
 
 For tutorials, the direct Apollo Client approach is probably better for educational purposes, but for production apps, `svelte-apollo` would provide a better developer experience.
-
-## Getting Help
-
-- **Issues**: Open an issue in this repository
-- **Community**: Join the [Holochain Forum](https://forum.holochain.org/)
-- **hREA**: Connect with hREA developers in their [Discord Server](https://discord.gg/hREA) 
