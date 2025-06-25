@@ -24,16 +24,16 @@
       "name": "ui",
       "version": "0.1.0",
       "dependencies": {
-        "@apollo/client": "^3.13.8",
         "@holochain/client": "^0.19.0",
         "@msgpack/msgpack": "^2.8.0",
-        "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
-        "graphql": "^16.8.0",
       },
       "devDependencies": {
+        "@apollo/client": "^3.13.8",
         "@sveltejs/vite-plugin-svelte": "^5.0.3",
         "@tsconfig/svelte": "^5.0.4",
+        "@valueflows/vf-graphql-holochain": "^0.0.3-alpha.10",
         "bestzip": "^2.2.1",
+        "graphql": "^16.8.0",
         "rimraf": "^5.0.10",
         "svelte": "^5.0.0",
         "tslib": "^2.8.0",
@@ -233,9 +233,9 @@
 
     "@types/yauzl": ["@types/yauzl@2.10.3", "", { "dependencies": { "@types/node": "*" } }, "sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q=="],
 
-    "@valueflows/vf-graphql": ["@valueflows/vf-graphql@0.9.1-alpha.4", "", { "dependencies": { "@graphql-tools/merge": "^8.3.16" }, "peerDependencies": { "graphql": ">=14" } }, "sha512-W94FacZnp/6W6zk+XCeMIWEDURh59Qb8hgz1TpsEC0caqxvTgQTGUI7m2RjAfb/van2usmKHtZyLIZb5tkwNYw=="],
+    "@valueflows/vf-graphql": ["@valueflows/vf-graphql@0.9.1-alpha.5", "", { "dependencies": { "@graphql-tools/merge": "^8.3.16" }, "peerDependencies": { "graphql": ">=15" } }, "sha512-3YB8o6JicAjMD83FKXP80uzWpECqsTA54bCvJ4F/7kFXFX+6JQL2lFWIDqjd25n6dhhILHd9v4r54eyPyfgPtQ=="],
 
-    "@valueflows/vf-graphql-holochain": ["@valueflows/vf-graphql-holochain@0.0.3-alpha.10", "", { "dependencies": { "@graphql-tools/schema": "^10.0.23", "@valueflows/vf-graphql": "^0.9.1-alpha.4", "graphql": "16.11.0", "graphql-tag": "2.12.6", "signal-polyfill": "0.2.2", "signal-utils": "0.21.1" } }, "sha512-X8AR6EEwRw9SySjCXv7AjiuLyriQjrfY4lu9+Vjauat9Jq2P3UnqTiBzJlw1OIOmT9CJB89asuNv4V2ZDG52rg=="],
+    "@valueflows/vf-graphql-holochain": ["@valueflows/vf-graphql-holochain@0.0.3-alpha.11", "", { "dependencies": { "@graphql-tools/schema": "^10.0.23", "@valueflows/vf-graphql": "^0.9.1-alpha.4", "graphql": "16.11.0", "graphql-tag": "2.12.6", "signal-polyfill": "0.2.2", "signal-utils": "0.21.1" } }, "sha512-A62OAOEhk7/LnMjGXv+h5UheEclSjnCwUlJa2u8q6aTfwGh1SBLYmz7k5QKHpZIRT7Le8qKULt7hD4HJK36LOw=="],
 
     "@vitest/expect": ["@vitest/expect@3.2.4", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/spy": "3.2.4", "@vitest/utils": "3.2.4", "chai": "^5.2.0", "tinyrainbow": "^2.0.0" } }, "sha512-Io0yyORnB6sikFlt8QW5K7slY4OjqNX9jmJQ02QDda8lyM6B5oNgVWoSoKPac8/kgnCUzuHQKrSLtu/uOqqrig=="],
 
@@ -389,7 +389,7 @@
 
     "electron-is-dev": ["electron-is-dev@2.0.0", "", {}, "sha512-3X99K852Yoqu9AcW50qz3ibYBWY79/pBhlMCab8ToEWS48R0T9tyxRiQhwylE7zQdXrMnx2JKqUJyMPmt5FBqA=="],
 
-    "emittery": ["emittery@1.1.0", "", {}, "sha512-rsX7ktqARv/6UQDgMaLfIqUWAEzzbCQiVh7V9rhDXp6c37yoJcks12NVD+XPkgl4AEavmNhVfrhGoqYwIsMYYA=="],
+    "emittery": ["emittery@1.2.0", "", {}, "sha512-KxdRyyFcS85pH3dnU8Y5yFUm2YJdaHwcBZWrfG8o89ZY9a13/f9itbN+YG3ELbBo9Pg5zvIozstmuV8bX13q6g=="],
 
     "emoji-regex": ["emoji-regex@8.0.0", "", {}, "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A=="],
 

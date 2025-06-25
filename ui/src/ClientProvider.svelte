@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, setContext } from "svelte";
+  import { onMount, setContext, type Snippet } from "svelte";
   import {
     CLIENT_CONTEXT_KEY,
     APOLLO_CLIENT_CONTEXT_KEY,
@@ -8,7 +8,7 @@
   } from "./contexts.svelte";
 
   interface Props {
-    children?: import("svelte").Snippet;
+    children?: Snippet;
   }
 
   let { children }: Props = $props();

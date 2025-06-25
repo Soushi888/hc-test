@@ -1,13 +1,13 @@
 [package]
-name = "user"
+name = "hc_test"
 version = "0.0.1"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "user"
+name = "hc_test"
 
 [dependencies]
 hdk = { workspace = true }
 serde = { workspace = true }
-user_integrity = { workspace = true }
+hc_test_integrity = { workspace = true }
