@@ -128,21 +128,15 @@ roles:
         clone_limit: 0
 ```
 
-**Edit `workdir/web-happ.yaml`:**
-```yaml
-# ... existing content ...
-# Add hREA role here too if needed for web deployment
-```
-
 ### Step 3: Download hREA DNA
 
 **Edit your `package.json`** to add hREA v0.3.2 DNA download:
 ```json
 {
   "scripts": {
-    "postinstall": "bun run download-hrea",
     // other scripts...
     "download-hrea": "[ ! -f \"workdir/hrea.dna\" ] && curl -L --output workdir/hrea.dna https://github.com/h-REA/hREA/releases/download/happ-0.3.2-beta/hrea.dna; exit 0"
+    "postinstall": "bun run download-hrea",
   }
 }
 ```
